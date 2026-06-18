@@ -106,6 +106,22 @@ python clustering_pipeline.py --modelo <name_model> --max_evals <int>
 python predict.py --modelo <name_model> --params bayesiano --embeddings_path "../test/embeddings/<name_model>" --params_dir "../test/Modelos"
 ```
 
+# Incorporaciones
+
+En esta implementación se agregaron las siguientes funcionalidades al proyecto original:
+
+- **Módulo STORI:** Conversión automática de datos observacionales al formato STORI a partir de un archivo de configuración (`input_config.json`).
+- **Generación automática de `sample.csv`:** El pipeline genera el archivo `data/sample.csv`, que sirve como entrada para las siguientes etapas del procesamiento.
+- **Perfilado de datos CSV:** Se incorporó un módulo que obtiene métricas generales del conjunto de datos, incluyendo:
+  - Tamaño del archivo.
+  - Número de registros y columnas.
+  - Memoria estimada utilizada.
+  - Tipo de dato por columna.
+  - Valores nulos y porcentaje de nulos.
+  - Valores únicos por columna.
+  - Memoria consumida por cada columna.
+- **Integración del pipeline:** El proceso de generación de STORI, perfilado del dataset y generación de embeddings se ejecuta de forma secuencial desde `generate_embedding.py`.
+
 ## 📝 Notas Adicionales
 
 * Los modelos de Sentence Transformers se descargan automáticamente la primera vez
