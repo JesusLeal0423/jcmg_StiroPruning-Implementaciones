@@ -3,7 +3,23 @@ from Modules.model_manager import EmbeddingModelManager
 import time
 import os
 import argparse
+from perfiladoCSV import perfilado_csv
+from STORI.STORI import load_config, generar_stori, exportar_csv
 
+##################################################################
+#              STORI
+print("Cargando configuración STORI...")
+
+config = load_config()
+
+stori_df = generar_stori(config)
+
+print(f"Total registros: {len(stori_df)}")
+
+# Guardando el archivo que usará el pipeline
+exportar_csv(stori_df, "../data/sample.csv")
+
+##################################################################
 
 
 # -------------------------------------------------------------------------------
@@ -31,6 +47,24 @@ parser.add_argument(
 args = parser.parse_args()
 
 path_test  = f"{args.output_dir}"
+
+##################################################################
+# Perfilado del dataset
+reporte = perfilado_csv("../data/sample.csv")
+
+print("\n---- Metricas de Almacenamiento y Volumen ----")
+for k, v in reporte["metricas_generales"].items():
+    print(f"{k}: {v}")
+
+
+print("\n---- Perfilado por Columna ----")
+for col in reporte["perfil_columnas"]:
+    print("---------------------------")
+    for k, v in col.items():
+        print(f"{k}: {v}")   
+
+##################################################################
+
 # -------------------------------------------------------------------------------
 # Cargar el dataset de intents
 start_time = time.time()
