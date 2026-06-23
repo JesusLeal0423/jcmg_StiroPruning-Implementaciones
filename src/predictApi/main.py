@@ -8,6 +8,7 @@ import unicodedata
 import os
 import json
 import datetime
+from src.Preparacion.preparacion_service import iniciar_preparacion
 
 app = FastAPI()
 classifier_manager = ClassificationManager(random_state=42)
@@ -437,3 +438,20 @@ def predict(request: PredictRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+################################################
+#Endpoint para iniciar la preparación de datos
+
+@app.post("/api/v1/preparacion/iniciar")
+def preparar_datos():
+    try:
+        resultado = iniciar_preparacion()
+        return resultado
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+################################################

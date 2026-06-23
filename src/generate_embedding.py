@@ -3,24 +3,20 @@ from Modules.model_manager import EmbeddingModelManager
 import time
 import os
 import argparse
-from perfiladoCSV import perfilado_csv
-from STORI.STORI import load_config, generar_stori, exportar_csv
+from Preparacion.preparacion_service import iniciar_preparacion
+
 
 ##################################################################
-#              STORI
-print("Cargando configuración STORI...")
+# PREPARACION
 
-config = load_config()
+resultado_preparacion = iniciar_preparacion()
 
-stori_df = generar_stori(config)
+print("\n===== RESUMEN PREPARACION =====")
 
-print(f"Total registros: {len(stori_df)}")
-
-# Guardando el archivo que usará el pipeline
-exportar_csv(stori_df, "../data/sample.csv")
+for k, v in resultado_preparacion.items():
+    print(f"{k}: {v}")
 
 ##################################################################
-
 
 # -------------------------------------------------------------------------------
 # Argumentos de línea de comandos para seleccionar el modelo
@@ -47,23 +43,6 @@ parser.add_argument(
 args = parser.parse_args()
 
 path_test  = f"{args.output_dir}"
-
-##################################################################
-# Perfilado del dataset
-reporte = perfilado_csv("../data/sample.csv")
-
-print("\n---- Metricas de Almacenamiento y Volumen ----")
-for k, v in reporte["metricas_generales"].items():
-    print(f"{k}: {v}")
-
-
-print("\n---- Perfilado por Columna ----")
-for col in reporte["perfil_columnas"]:
-    print("---------------------------")
-    for k, v in col.items():
-        print(f"{k}: {v}")   
-
-##################################################################
 
 # -------------------------------------------------------------------------------
 # Cargar el dataset de intents
