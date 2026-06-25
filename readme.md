@@ -148,7 +148,7 @@ pip install -r requirements.txt
 ### 3. Ejecutar el servicio
 
 ```bash
-uvicorn main:app --reload
+uvicorn src.predictApi.main:app --reload
 ```
 
 ### 4. Acceder al servicio
