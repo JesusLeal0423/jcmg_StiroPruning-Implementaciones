@@ -122,6 +122,60 @@ En esta implementación se agregaron las siguientes funcionalidades al proyecto 
   - Memoria consumida por cada columna.
 - **Integración del pipeline:** El proceso de generación de STORI, perfilado del dataset y generación de embeddings se ejecuta de forma secuencial desde `generate_embedding.py`.
 
+## Endpoints agregados
+
+Se agregaron los siguientes endpoints para automatizar el flujo de preparación y predicción.
+
+### POST /api/v1/preparacion/iniciar
+
+Inicia la etapa de preparación de los datos y realiza automáticamente:
+
+- Generación de la consulta STORI.
+- Exportación del dataset.
+- Perfilado del archivo CSV.
+- Generación de embeddings.
+- Registro del proceso.
+
+---
+
+### GET /api/v1/preparacion/status/{id_query}
+
+Permite consultar el estado de una preparación previamente iniciada mediante su identificador.
+
+Devuelve información como:
+
+- Identificador de la consulta.
+- Estado del proceso (PENDING, PROCESSING, COMPLETED o ERROR).
+- Mensaje asociado al resultado.
+
+---
+
+### POST /api/v1/prediction/iniciar
+
+Ejecuta el proceso completo de predicción:
+
+- Generación del embedding.
+- Clasificación mediante un modelo MLP.
+- Predicción del grupo.
+- Verificación de existencia del vector dentro del grupo.
+- Obtención de los 10 vectores más similares.
+- Generación del archivo de similitudes.
+
+---
+
+### GET /api/v1/prediction/status/{id_query}
+
+Permite consultar el estado de una predicción previamente iniciada.
+
+Devuelve información como:
+
+- Identificador de la consulta.
+- Estado de la predicción.
+- Resultado generado (cuando la ejecución ha finalizado).
+  
+
+
+
 ## 📝 Notas Adicionales
 
 * Los modelos de Sentence Transformers se descargan automáticamente la primera vez

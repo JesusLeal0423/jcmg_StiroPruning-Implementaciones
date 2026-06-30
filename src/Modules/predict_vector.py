@@ -166,7 +166,7 @@ class PredictVector:
         indices_globales = embeddings_df.index[mask_grupo].tolist()
         
         if len(embeddings_group) == 0:
-            return False, None, None
+            return False, None, None, None
         
         # Extraer solo las columnas de embeddings (sin la columna 'label')
         embeddings_group_valores = embeddings_group.drop(columns=['label']).values
@@ -178,7 +178,6 @@ class PredictVector:
                 print("Encontrado")
                 idx_global = int(indices_globales[idx_relativo])
                 return True, idx_relativo, idx_global
-
         print("No encontrado")
         return False, None, None
 

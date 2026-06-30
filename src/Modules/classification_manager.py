@@ -8,9 +8,9 @@ from sklearn.metrics import classification_report, accuracy_score
 import time
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
-from xgboost import XGBClassifier
+#from xgboost import XGBClassifier
 from sklearn.metrics import recall_score
-# import xgboost as xgb
+#import xgboost as xgb
 class ClassificationManager:
     """
     Clase para generar modelos de clasificación basados en clusters obtenidos

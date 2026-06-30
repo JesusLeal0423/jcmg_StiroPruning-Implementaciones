@@ -4,12 +4,14 @@ import pandas as pd
 from Modules.predict_vector import PredictVector
 from Modules.classification_manager import ClassificationManager
 
+import os
+
 def main():
     parser = argparse.ArgumentParser(description="Predicción de grupo usando clasificación para un vector de entrada.")
     parser.add_argument("--modelo", type=str, choices=["use", "st1", "st2", "st3"], help="Modelo de embeddings a usar", default="st1")
     parser.add_argument("--params", type=str, choices=["random", "bayesian", "separate_grid"], help="Tipo de parámetros de clustering usados", default="bayesian")
     parser.add_argument("--embeddings_path", type=str, default="test/Embeddings", help="Ruta al archivo .npy de embeddings")
-    parser.add_argument("--models_dir", type=str, default="test/Modelos", help="Directorio donde están los modelos")
+    parser.add_argument("--models_dir", type=str, default="../test/Modelos", help="Directorio donde están los modelos")
     parser.add_argument("--use_adjusted", action="store_true", help="Usar embeddings ajustados con columnas spatial, temporal e interest")
     args = parser.parse_args()
     
@@ -136,6 +138,9 @@ def main():
         
         # Cargar el CSV original para mostrar el vector correspondiente
         try:
+            print("Directorio actual:", os.getcwd())
+            print("Ruta absoluta:", os.path.abspath("../data/sample.csv"))
+            print("Existe:", os.path.exists("../data/sample.csv"))
             csv_original = pd.read_csv("../data/sample.csv")
             if idx_global < len(csv_original):
                 vector_original = csv_original.iloc[idx_global]
@@ -203,7 +208,7 @@ def main():
                 
                 # Cargar el CSV original para extraer los vectores originales
                 try:
-                    csv_original = pd.read_csv("../data/sample_v2.csv")
+                    csv_original = pd.read_csv("../data/sample.csv")
                     print(f"\nVectores originales correspondientes:")
                     print("="*80)
                     
@@ -231,8 +236,10 @@ def main():
                             print(f"Índice global {glob_idx} fuera del rango del CSV original")
                         print("-" * 60)
                         
-                except FileNotFoundError:
-                    print("No se pudo cargar el CSV original '../data/sample.csv'")
+                #except FileNotFoundError:
+                    #print("No se pudo cargar el CSV original '../data/sample.csv'")
+                except FileNotFoundError as e:
+                    print(f"ERROR FileNotFoundError: {e}")
                 except Exception as e:
                     print(f"Error al cargar CSV original: {str(e)}")
             else:

@@ -9,6 +9,9 @@ import os
 import json
 import datetime
 from src.Preparacion.preparacion_service import iniciar_preparacion
+import uuid
+################
+import traceback
 
 app = FastAPI()
 classifier_manager = ClassificationManager(random_state=42)
@@ -28,9 +31,13 @@ class TrainRequest(BaseModel):
 # Estructura para manejar múltiples clasificadores cargados
 loaded_classifiers = {}
 
+# Guarda el estado de las predicciones
+prediction_status = {}
+
 def add_loaded_classifier(model_key: str, classifier_manager:dict):
     """Añade un clasificador cargado al registro JSON de clasificadores"""
     loaded_classifiers_registry = {}
+    
     try:
         # Actualizar el diccionario en memoria
         loaded_classifiers[model_key] = classifier_manager
@@ -102,6 +109,28 @@ def load_classifier(request: TrainRequest):
         model_dir = os.path.join(request.models_dir + model_suffix, request.modelo, f"classifier_{model_name}{model_suffix}.pkl")
         print(model_dir)
         # print(f"Ruta de embeddings etiquetados: {embeddings_originales_labeled_path}")
+        
+        #########################################
+        
+        if not os.path.exists(model_dir):
+            print("Modelo no encontrado. Entrenando automáticamente...")
+
+            from src.predictApi.train_clasifier import train_and_save_classifiers
+
+            train_and_save_classifiers({
+                "modelo": request.modelo,
+                "params": request.params,
+                "embeddings_path": request.embeddings_path,
+                "models_dir": request.models_dir,
+                "ds_originales_path": request.ds_originales_path,
+                "use_adjusted": request.use_adjusted
+            })
+
+        # Ahora sí cargar el modelo
+        model_loaded = classifier_manager.load_model(model_path=model_dir)
+        
+        #########################################
+        
         model_loaded = classifier_manager.load_model(
             model_path=model_dir
         )
@@ -142,7 +171,7 @@ def limpiar_texto(texto):
     texto = texto.replace(',', '')
     return texto
 
-def save_prediction_log(query_string: str, predicted_label: int, confidence: float, predict: str, csv_path: str = "./prediction_log.csv"):
+def save_prediction_log(query_string: str, predicted_label: int, confidence: float, predict: str, csv_path: str = "./test/prediction_log.csv"):
     """
     Guarda el log de predicciones en un CSV con contador automático
     """
@@ -270,9 +299,9 @@ def predict(request: PredictRequest):
                 "predicted_label": int(predicted_label) if predicted_label is not False else False,
                 "timestamp": datetime.datetime.now().isoformat()
             }
-            
+
             # Definir nombre del archivo CSV para embeddings
-            embedding_csv_dir = "./"
+            embedding_csv_dir = "./test/embeddings"
             embedding_csv_path = os.path.join(embedding_csv_dir, "embedding_generado.csv")
             
             # Si el archivo existe, cargar y agregar; si no, crear nuevo
@@ -352,6 +381,7 @@ def predict(request: PredictRequest):
             except Exception as e:
                 response["vector_original_error"] = str(e)
         else:
+            print("Regresó de buscar_similares_en_grupo_por_etiqueta")
             # Buscar similares dentro del grupo predicho
             top_idx, similarities, idx_global, embeddings_group = predictor.buscar_similares_en_grupo_por_etiqueta(
                 embedding=embedding,
@@ -379,11 +409,11 @@ def predict(request: PredictRequest):
                                 "indice_relativo": int(rel_idx),
                                 "indice_global": int(glob_idx),
                                 "vector_original": {
-                                    "spatial": vector_original['spatial'],
-                                    "temporal": vector_original['temporal'],
-                                    "interest": vector_original['interest'],
-                                    "reference": vector_original['reference'],
-                                    "observation": vector_original['observation']
+                                    "spatial": str(vector_original["spatial"]),
+                                    "temporal": int(vector_original["temporal"]) if pd.notna(vector_original["temporal"]) else None,
+                                    "interest": str(vector_original["interest"]),
+                                    "reference": str(vector_original["reference"]),
+                                    "observation": str(vector_original["observation"])
                                 },
                                 "sentencia_procesada": sentencia_procesada
                             })
@@ -399,7 +429,7 @@ def predict(request: PredictRequest):
 
                     # Definir nombre base del archivo
                     csv_base = "similitudes_consulta"
-                    csv_dir = "./"
+                    csv_dir = "./test/similitudes"
                     consulta_num = 1
 
                     # Buscar un nombre de archivo que no exista aún
@@ -434,11 +464,66 @@ def predict(request: PredictRequest):
                     response["top_10_error"] = "No se pudo cargar el CSV original '../data/sample.csv'"
                 except Exception as e:
                     response["top_10_error"] = f"Error al cargar CSV original: {str(e)}"
-        return True
+        #return True
+        #Regresa toda la informacion ya guardada en reponse
+        return response
+        
+    
+    except Exception as e:
+        traceback.print_exc()
+        print(type(e))
+        print(repr(e))
+        raise
+
+
+@app.post("/api/v1/prediction/iniciar")
+def iniciar_prediccion(request: PredictRequest):
+
+    # Generar identificador único
+    query_id = str(uuid.uuid4())
+
+    # Guardar que inició
+    prediction_status[query_id] = {
+        "status": "PROCESANDO",
+        "resultado": None
+    }
+
+    try:
+
+        # Ejecutar la predicción
+        resultado = predict(request)
+
+        # Guardar resultado
+        prediction_status[query_id]["status"] = "COMPLETADO"
+        prediction_status[query_id]["resultado"] = resultado
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        traceback.print_exc()
+        
+        prediction_status[query_id]["status"] = "ERROR"
+        prediction_status[query_id]["resultado"] = str(e)
 
+    return {
+        "id_query": query_id,
+        "status": prediction_status[query_id]["status"]
+    }
+    
+@app.get("/api/v1/prediction/status/{id_query}")
+def consultar_prediccion(id_query: str):
+
+    if id_query not in prediction_status:
+        raise HTTPException(
+            status_code=404,
+            detail="Predicción no encontrada"
+        )
+
+    return prediction_status[id_query]
+
+@app.get("/api/v1/prediction/status")
+def listar_predicciones():
+
+    return prediction_status
 
 ################################################
 #Endpoint para iniciar la preparación de datos
