@@ -38,3 +38,6 @@ test/
 # Configuraciones de IDEs/editors
 .vscode/
 *.sublime-workspace
+
+# Archivos de Chroma
+chroma_db/

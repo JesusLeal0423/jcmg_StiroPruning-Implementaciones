@@ -2,8 +2,11 @@ import pandas as pd
 import uuid
 import os
 
-from src.STORI.STORI import load_config, generar_stori, exportar_csv
-from src.perfiladoCSV import perfilado_csv
+#from src.STORI.STORI import load_config, generar_stori, exportar_csv
+#from src.perfiladoCSV import perfilado_csv
+
+from STORI.STORI import load_config, generar_stori, exportar_csv
+from perfiladoCSV import perfilado_csv
 
 ruta_actual = os.path.dirname(os.path.abspath(__file__))
 
@@ -12,7 +15,7 @@ archivo_log = os.path.join(
     "preparaciones.log"
 )
 
-def iniciar_preparacion():
+def iniciar_preparacion(modelo="st1"):
 
     print("Cargando configuración STORI...")
 
@@ -93,6 +96,19 @@ def iniciar_preparacion():
     registro.to_csv(archivo_indices, index=False)
     '''
     
+    '''
+    from generate_embedding import generar_embeddings
+
+    print("\nGenerando embeddings automáticamente...")
+    generar_embeddings(
+        modelo=modelo,
+        input_data=csv_path,
+        output_dir="test",
+        resultado_preparacion={
+            "idPreparacion": id_preparacion
+        }
+    )
+    '''
     with open(archivo_log, "a", encoding="utf-8") as log:
 
         log.write(
@@ -107,6 +123,6 @@ def iniciar_preparacion():
     "estatus": "PREPARACION_COMPLETADA",
     "registrosDetectados": len(stori_df),
     "columnasDetectadas": len(stori_df.columns),
-    "metricasGenerales": reporte["metricas_generales"],
-    "perfilColumnas": reporte["perfil_columnas"]
+    #"\nmetricasGenerales": reporte["metricas_generales"],
+    #"\nperfilColumnas": reporte["perfil_columnas"]
     }

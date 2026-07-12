@@ -39,7 +39,9 @@ pip install -r requirements.txt
 
 ├── `src`
 │   ├── `Modules`
-│   ├── `classification_manager.py/` 
+│   │   │── `chroma_service.py/` – Servicio para administrar ChromaDB y el almacenamiento
+│   │   │── `ver_chroma.py/` – Este script nos ayuda a poder visualizar las colecciones guardadas en chroma
+│   │   │── `classification_manager.py/` 
 │   │   ├── `clustering_manager.py/` – Gestor de clustering (UMAP + HDBSCAN)
 │   │   ├── `estimators.py/`
 │   │   ├── `model_manager.py/`  – Gestor de modelos de embeddings
@@ -181,20 +183,8 @@ Inicia la etapa de preparación de los datos y realiza automáticamente:
 - Generación de la consulta STORI.
 - Exportación del dataset.
 - Perfilado del archivo CSV.
-- Generación de embeddings.
 - Registro del proceso.
-
----
-
-### GET /api/v1/preparacion/status/{id_query}
-
-Permite consultar el estado de una preparación previamente iniciada mediante su identificador.
-
-Devuelve información como:
-
-- Identificador de la consulta.
-- Estado del proceso (PENDING, PROCESSING, COMPLETED o ERROR).
-- Mensaje asociado al resultado.
+- Retorno de un resumen de la operación.
 
 ---
 
@@ -221,6 +211,36 @@ Devuelve información como:
 - Estado de la predicción.
 - Resultado generado (cuando la ejecución ha finalizado).
   
+## Implementación de ChromaDB
+
+Se incorporó una base de datos vectorial utilizando **ChromaDB** para almacenar de forma persistente los embeddings generados durante la etapa de preparación.
+
+Durante el script de la generación de  embeddings el sistema realiza automáticamente las siguientes actividades:
+
+- Crea o reutiliza una colección asociada al dominio del conjunto de datos.
+- Genera un identificador único para cada registro.
+- Almacena el texto STORI utilizado para generar el embedding.
+- Guarda el vector de embedding correspondiente.
+- Registra metadatos asociados a cada registro, incluyendo:
+  - Modelo de embeddings utilizado.
+  - Identificador de la preparación.
+  - Campo de referencia.
+  - Campo de observación.
+- Inserta los registros por lotes para mejorar el rendimiento durante el almacenamiento.
+
+Con esta implementación, los embeddings estaran almacenados en una base de datos vectorial, permitiendo su reutilización en futuras etapas del sistema sin necesidad de volver a generarlos.
+
+### Script para Chroma
+
+Se incorporo un script el cual muestra las colecciones que ser guardaron en Chroma
+
+```bash
+cd jcmg_StiroPruning/src/Modules
+
+ls
+```
+
+Ejecutar el archivo: ```ver_chroma.py```
 
 
 

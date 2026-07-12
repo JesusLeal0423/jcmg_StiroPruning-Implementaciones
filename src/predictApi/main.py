@@ -171,7 +171,7 @@ def limpiar_texto(texto):
     texto = texto.replace(',', '')
     return texto
 
-def save_prediction_log(query_string: str, predicted_label: int, confidence: float, predict: str, csv_path: str = "./test/prediction_log.csv"):
+def save_prediction_log(query_string: str, predicted_label: int, confidence: float, predict: str, csv_path: str = "./test/prediction.log"):
     """
     Guarda el log de predicciones en un CSV con contador automático
     """
