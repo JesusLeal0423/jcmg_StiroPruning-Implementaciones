@@ -249,14 +249,46 @@ Con esta implementación, los embeddings estaran almacenados en una base de dato
 Se incorporo un script el cual muestra las colecciones que ser guardaron en Chroma
 
 ```bash
-cd jcmg_StiroPruning/src/Modules
+cd jcmg_StiroPruning/
 
 ls
 ```
 
-Ejecutar el archivo: ```ver_chroma.py```
+Ejecutar el archivo: ```ver_chroma.py``` con python ```src/Modules/ver_chroma.py```
 
+## Consultas en chroma
 
+Ejemplo de consulta en /loadClassifier
+```bash
+{
+  "modelo": "st1",
+  "params": "separate_grid",
+  "models_dir": "test/Modelos",
+  "ds_originales_path": "./data/sample.csv",
+  "name_modelo": "mlp",
+  "use_adjusted": false,
+  "embeddings_path": "test/Embeddings"
+}
+```
+
+Ejemplo en la etapa de prediction/iniciar
+
+```bash
+{
+  "modelo": "st1",
+  "classifier_model": "mlp",
+  "use_adjusted": false,
+  "vector_input": [
+    "Total.Total",
+    "2000",
+    "Total.Total.H",
+    "100k",
+    "0.0668115769278366"
+  ],
+  "domain": "sample",
+  "n_results": 10
+}
+```
 
 ## 📝 Notas Adicionales
 
