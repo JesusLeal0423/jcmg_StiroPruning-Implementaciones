@@ -258,7 +258,7 @@ Ejecutar el archivo: ```ver_chroma.py``` con python ```src/Modules/ver_chroma.py
 
 ## Consultas en chroma
 
-Ejemplo de consulta en /loadClassifier
+Ejemplo en la etapa de /loadClassifier
 ```bash
 {
   "modelo": "st1",
