@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import numpy as np
 import pandas as pd
 from src.Modules.predict_vector import PredictVector
@@ -10,7 +10,6 @@ import json
 import datetime
 from src.Preparacion.preparacion_service import iniciar_preparacion
 import uuid
-################
 import traceback
 
 app = FastAPI()
@@ -226,6 +225,17 @@ class PredictRequest(BaseModel):
     classifier_model: str = "mlp"
     use_adjusted: bool = False
     vector_input: list
+    domain: str = Field(
+        ...,
+        min_length=1,
+        description="Dominio que la colección stori_<domain> va a consultará en ChromaDB."
+    )
+    n_results: int = Field(
+        default=10,
+        ge=1,
+        le=100,
+        description="Número máximo de resultados a recuperar de ChromaDB."
+    )
     
 @app.post("/predict")
 def predict(request: PredictRequest):
@@ -234,6 +244,8 @@ def predict(request: PredictRequest):
     #     "modelo": "st1",                # Modelo de embeddings a usar: "st1", "st2", "st3" o "use"
     #     "classifier_model": "mlp",      # Nombre del modelo de clasificador cargado
     #     "use_adjusted": false,          # Si se usan embeddings ajustados (true/false)
+    #     "domain": "sample",            # Colección stori_sample de ChromaDB
+    #     "n_results": 10,                # Máximo de vecinos a devolver
     #     "vector_input": [               # Vector de entrada, puede ser lista de strings o valores
     #         "Madrid",                   # spatial
     #         "2023",                     # temporal
@@ -327,6 +339,7 @@ def predict(request: PredictRequest):
         }
         print("Respuesta generada:\n" + json.dumps(response, indent=4, ensure_ascii=False))
         # Cargar embeddings etiquetados para análisis adicional
+        '''
         path_embeddings_labeled = os.path.join(
             f"{classifier_model['embeddings_path']}_{classifier_model['modelo_name']}{classifier_model['use_adjusted']}",
             classifier_model['params'],
@@ -335,23 +348,25 @@ def predict(request: PredictRequest):
         )
         print("Cargando embeddings etiquetados desde:", path_embeddings_labeled)
         embeddings, labels = classifier_manager.load_data(path_embeddings_labeled)
+        '''
         # labels = classifier_manager.labels
         # embeddings = classifier_manager.embeddings
    
-   
+        '''
         if probabilities is not None:
             max_prob = float(np.max(probabilities[0]))
             response["confianza"] = max_prob
             unique_labels = np.unique(labels)
             probabilities_list = probabilities[0].tolist()
-
-        print(f"Grupo predicho: {predicted_label} con confianza {response.get('confianza', 'N/A')}")
+        '''
         
-        
-        
-        
+        if probabilities is not None:
+            response["confianza"] = float(np.max(probabilities[0]))
+            
+        print(f"Grupo predicho: {predicted_label} con confianza {response.get('confianza', 'N/A')}") 
         
         # Verificar si el embedding ya existe exactamente en el grupo
+        '''
         existe, idx_relativo, idx_global = predictor.existe_en_grupo_por_etiqueta(
             embedding_query=embedding, 
             embeddings_path=path_embeddings_labeled,
@@ -367,6 +382,7 @@ def predict(request: PredictRequest):
         )
         print(f"¿Existe en el grupo {predicted_label}? {existe}")
         response["existe_en_grupo"] = existe
+        
         if existe:
             print(f"El embedding ya existe en el grupo: {predicted_label}")
             response["indice_relativo"] = int(idx_relativo)
@@ -389,6 +405,7 @@ def predict(request: PredictRequest):
                 grupo_id=predicted_label,
                 top_n=10
             )
+            
             print(f"Top 10 índices relativos en el grupo: {top_idx}")
             if len(top_idx) > 0:
                 # Cargar el CSV original para extraer los vectores originales
@@ -467,7 +484,38 @@ def predict(request: PredictRequest):
         #return True
         #Regresa toda la informacion ya guardada en reponse
         return response
-        
+        '''
+        try:
+            resultado = predictor.buscar_similares(
+                embedding=embedding,
+                domain=request.domain,
+                n_results=request.n_results
+            )
+            print("--- Resultado en Chroma ---")
+            print(resultado)
+        except CollectionNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        top_10 = []
+
+        ids = resultado["ids"][0]
+        docs = resultado["documents"][0]
+        metadatas = resultado["metadatas"][0]
+        distancias = resultado["distances"][0]
+
+        for i in range(len(ids)):
+            top_10.append({
+                "id": ids[i],
+                "documento": docs[i],
+                "metadata": metadatas[i],
+                "distancia": distancias[i]
+            })
+
+        response["domain"] = request.domain
+        response["n_results"] = len(top_10)
+        response["neighbors"] = top_10
+
+        return response
     
     except Exception as e:
         traceback.print_exc()

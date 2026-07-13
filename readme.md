@@ -199,6 +199,20 @@ Ejecuta el proceso completo de predicción:
 - Obtención de los 10 vectores más similares.
 - Generación del archivo de similitudes.
 
+La solicitud debe incluir el dominio de los embeddings ya almacenados en
+ChromaDB. El servicio consulta la colección `stori_<domain>` y devuelve los
+vecinos junto con la distancia calculada por ChromaDB.
+
+```json
+{
+  "modelo": "st1",
+  "classifier_model": "mlp",
+  "vector_input": ["aguascalientes", "2023", "hombre", "0.322", "100k"],
+  "domain": "sample",
+  "n_results": 10
+}
+```
+
 ---
 
 ### GET /api/v1/prediction/status/{id_query}

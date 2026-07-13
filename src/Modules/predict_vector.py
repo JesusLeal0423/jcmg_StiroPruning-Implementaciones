@@ -4,6 +4,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 # from Modules.model_manager import EmbeddingModelManager
 from src.Modules.model_manager import EmbeddingModelManager
 import pandas as pd
+#from Modules.chroma_service import ChromaService
+from src.Modules.chroma_service import ChromaService
 
 class PredictVector:
     def __init__(self, embedding_model_name, embedding_model_type, embedding_model_path):
@@ -18,6 +20,7 @@ class PredictVector:
         self.manager = EmbeddingModelManager()
         self.manager.load_model(embedding_model_name, embedding_model_type, embedding_model_path)
         self.model_name = embedding_model_name
+        self.chroma = ChromaService()
 
     def generar_embedding(self, entrada):
         """
@@ -238,3 +241,13 @@ class PredictVector:
         indices_globales_array = np.array(indices_globales)
         
         return top_idx, similarities[top_idx], indices_globales_array[top_idx], embeddings_group
+
+    def buscar_similares( self, embedding, domain, n_results=5):
+
+        resultado = self.chroma.search_embeddings(
+            domain=domain,
+            embedding=embedding,
+            n_results=n_results
+        )
+
+        return resultado

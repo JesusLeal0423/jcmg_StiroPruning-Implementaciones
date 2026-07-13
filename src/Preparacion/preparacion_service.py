@@ -2,11 +2,11 @@ import pandas as pd
 import uuid
 import os
 
-#from src.STORI.STORI import load_config, generar_stori, exportar_csv
-#from src.perfiladoCSV import perfilado_csv
+from src.STORI.STORI import load_config, generar_stori, exportar_csv
+from src.perfiladoCSV import perfilado_csv
 
-from STORI.STORI import load_config, generar_stori, exportar_csv
-from perfiladoCSV import perfilado_csv
+#from STORI.STORI import load_config, generar_stori, exportar_csv
+#from perfiladoCSV import perfilado_csv
 
 ruta_actual = os.path.dirname(os.path.abspath(__file__))
 

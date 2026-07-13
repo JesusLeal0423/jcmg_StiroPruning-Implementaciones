@@ -100,7 +100,7 @@ def generar_embeddings(
     domain = os.path.splitext(os.path.basename(input_data))[0].lower()
 
     # Crear instancia de Chroma
-    chroma = ChromaService(path="./chroma_db", collection_prefix="stori")
+    chroma = ChromaService(collection_prefix="stori")
 
     # ID de preparación para diferenciar ejecuciones
     if resultado_preparacion:
@@ -119,6 +119,7 @@ def generar_embeddings(
     for i in range(len(all_intents)):
         metadatas.append({
             "modelo": nombre,
+            #"label": int(label),
             "id_preparacion": id_preparacion,
             "reference": str(reference_column.iloc[i]),
             "observation": str(observation_column.iloc[i])
