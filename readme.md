@@ -316,3 +316,4 @@ python src/generate_embedding.py --modelo st1
 * Universal Sentence Encoder requiere conexión a internet para la descarga inicial
 * Los archivos de embeddings pueden ser grandes (varios GB dependiendo del dataset)
 * Recomendado: al menos 8GB de RAM para datasets medianos
+* Se esta incorporando el generate_embedding.py en el endpoint de preparación 
