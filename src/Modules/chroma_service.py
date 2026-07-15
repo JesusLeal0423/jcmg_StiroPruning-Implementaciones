@@ -7,9 +7,9 @@ class ChromaService:
     def __init__(self, path=None, collection_prefix="stori"):
         if path is None:
             path = Path(__file__).resolve().parents[2] / "chroma_db"
-        self.client = chromadb.PersistentClient(
-            path=str(path),
-            settings=Settings(anonymized_telemetry=False)
+        self.client = chromadb.HttpClient( #Se modifico esta parte para poder tener chroma en un contenedor docker
+            host="localhost",
+            port=8000
         )
         self.collection_prefix = collection_prefix
 
