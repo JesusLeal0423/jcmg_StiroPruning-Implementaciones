@@ -98,7 +98,7 @@ cd src
 Ejecutar el generador de embedings
 
 ```
-python generate_embedding.py --modelo st1
+python src/generate_embedding.py --modelo st1
 ```
 
 * Modelos disponibles:
@@ -248,13 +248,13 @@ Con esta implementación, los embeddings estaran almacenados en una base de dato
 
 Se incorporo un script el cual muestra las colecciones que ser guardaron en Chroma
 
+Ejecutar el archivo: ```ver_chroma.py``` con python ```src/Modules/ver_chroma.py```
+
 ```bash
 cd jcmg_StiroPruning/
 
-ls
+python src/Modules/ver_chroma.py
 ```
-
-Ejecutar el archivo: ```ver_chroma.py``` con python ```src/Modules/ver_chroma.py```
 
 ## Consultas en chroma
 
@@ -289,6 +289,26 @@ Ejemplo en la etapa de prediction/iniciar
   "n_results": 10
 }
 ```
+
+## Se incorporo un contenedor docker para la Base de datos chroma 
+
+### Para poder crear el contenedor pega este comando en terminal
+
+```bash
+docker run -d \
+  --name chromadb \
+  -p 8000:8000 \
+  -v chroma_data:/chroma/chroma \
+  chromadb/chroma:0.5.5
+```
+Con eso se creara el contenedor y esta listo para ejecutarse 
+
+Se debe ejecutar el generador de embedings para poder observar que se guarda en chorma
+
+```
+python src/generate_embedding.py --modelo st1
+```
+
 
 ## 📝 Notas Adicionales
 
