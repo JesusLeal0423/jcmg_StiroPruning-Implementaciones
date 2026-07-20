@@ -1,16 +1,33 @@
 import chromadb
 from chromadb.errors import IDAlreadyExistsError
-from chromadb.config import Settings
-from pathlib import Path
+import os
+#from chromadb.config import Settings
+#from pathlib import Path
 
 class ChromaService:
     def __init__(self, path=None, collection_prefix="stori"):
+        ''' 
+        #Esto actualmente no se usa ya que la DB esta corriendo en docker y no en local
+        #En path=None, se crea la DB en la ruta por defecto de ChromaDB
+        
         if path is None:
             path = Path(__file__).resolve().parents[2] / "chroma_db"
+        '''
+        
+        '''
         self.client = chromadb.HttpClient( #Se modifico esta parte para poder tener chroma en un contenedor docker
             host="localhost",
             port=8000
         )
+        '''
+        host = os.getenv("CHROMA_HOST", "localhost")
+        port = int(os.getenv("CHROMA_PORT", 8000))
+
+        self.client = chromadb.HttpClient(
+            host=host,
+            port=port
+        )
+        
         self.collection_prefix = collection_prefix
 
     def get_collection_name(self, domain: str) -> str:
@@ -22,7 +39,6 @@ class ChromaService:
         return self.client.get_or_create_collection(name=collection_name)
 
     def get_collection(self, domain: str):
-        """Obtiene una colección existente sin crear una colección vacía por error."""
         collection_name = self.get_collection_name(domain)
         try:
             return self.client.get_collection(name=collection_name)
@@ -96,7 +112,6 @@ class ChromaService:
         self,
         domain,
         embedding,
-        label=None,
         n_results=5
     ):
         collection = self.get_collection(domain)
@@ -111,15 +126,11 @@ class ChromaService:
             )
 
         n_results = min(n_results, total)
+        
         parametros = {
             "query_embeddings": [embedding],
             "n_results": n_results,
             "include": ["documents", "metadatas", "distances"]
-        }
-
-        if label is not None:
-            parametros["where"] = {
-                "label": int(label)
         }
 
         return collection.query(**parametros)

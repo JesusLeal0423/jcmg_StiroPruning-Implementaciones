@@ -2,11 +2,11 @@ import pandas as pd
 import uuid
 import os
 
-#from src.STORI.STORI import load_config, generar_stori, exportar_csv
-#from src.perfiladoCSV import perfilado_csv
+from src.STORI.STORI import load_config, generar_stori, exportar_csv
+from src.perfiladoCSV import perfilado_csv
 
-from STORI.STORI import load_config, generar_stori, exportar_csv
-from perfiladoCSV import perfilado_csv
+#from STORI.STORI import load_config, generar_stori, exportar_csv
+#from perfiladoCSV import perfilado_csv
 
 ruta_actual = os.path.dirname(os.path.abspath(__file__))
 
@@ -15,7 +15,7 @@ archivo_log = os.path.join(
     "preparaciones.log"
 )
 
-def iniciar_preparacion(modelo="st1"):
+def iniciar_preparacion(modelo="st1", saveCSV=None):
 
     print("Cargando configuración STORI...")
 
@@ -96,19 +96,27 @@ def iniciar_preparacion(modelo="st1"):
     registro.to_csv(archivo_indices, index=False)
     '''
     
-    '''
-    from generate_embedding import generar_embeddings
+    #Implementación de la generación de embeddings automáticamente después de la preparación
+    try:
+        from src.generate_embedding import generar_embeddings
 
-    print("\nGenerando embeddings automáticamente...")
-    generar_embeddings(
-        modelo=modelo,
-        input_data=csv_path,
-        output_dir="test",
-        resultado_preparacion={
-            "idPreparacion": id_preparacion
-        }
-    )
-    '''
+        print(f"saveCSV iniciar_preparacion: {saveCSV}")
+        
+        print("\nGenerando embeddings automáticamente...")
+        generar_embeddings(
+            modelo=modelo,
+            input_data=csv_path,
+            output_dir="test",
+            resultado_preparacion={
+                "idPreparacion": id_preparacion
+            },
+            saveCSV=saveCSV
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise
+    ''' '''
     with open(archivo_log, "a", encoding="utf-8") as log:
 
         log.write(

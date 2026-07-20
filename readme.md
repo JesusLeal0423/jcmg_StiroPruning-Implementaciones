@@ -4,33 +4,15 @@ Este proyecto implementa un sistema de generación de embeddings y clustering us
 
 ## 📋 Requisitos del Sistema
 
-* Python 3.8 o superior
+* Python 3.8 o superior (Recomendación)
 * pip (gestor de paquetes de Python)
 * Git (opcional, para clonar el repositorio)
+* Docker Desktop (Para deplegar la aplicación)
 
-## 🚀 Instalación del Entorno
 
-### Crear Entorno Virtual
-
-```
-# Crear entorno virtual
-python -m venv venv
-
-# Activar entorno virtual
-# En Windows:
-venv\Scripts\activate
-
-# En Linux/Mac:
-source venv/bin/activate
-```
-
-### Instalar Dependencias
-
-```
-pip install -r requirements.txt
-```
 
 ## 📁 Estructura del Proyecto
+```
 ├── `data/`
 │ ├── `H_Rates.csv` – Dataset principal de entrada  
 │ ├── `clean_csv.py`
@@ -58,67 +40,92 @@ pip install -r requirements.txt
 │   ├── `generate_embedding.py/` – Generación de embeddings
 │   ├── `perfiladoCSV.py/` – Perfilado y análisis de sample.csv
 │   └── `predict.py/` – Script de predicción
-
+│
 ├── `test/`
 │ ├── `embeddings/` – Embeddings generados
 │ └── `Modelos/` – Modelos entrenados
-
-└── `requirements.txt` – Dependencias del proyecto
-
-## 🔧 Configuración Inicial
-
-### Preparar Datos
-
-Coloca tu dataset en `data/sample.csv` con el formato requerido.
-
-### Crear Directorios
-
-Directorio de pruebas para la generacion de embeddings.
-
-```
-mkdir -p test/embeddings
+│
+│── `requirements.txt` – Dependencias del proyecto
+│
+├── `.dockerignore`
+├── `docker-compose.yml`
+├── `dockerfile` 
 ```
 
-Directorio de pruebas para el guaardado de modelos de clustering y UMAP.
 
-```
-mkdir -p test/Modelos
-```
+## 🚀 Instalación del Entorno
 
-## 📖 Uso Básico
+### 1. Clonar el repositorio
 
-### 1. Generar Embeddings
-
-Colocarle en el directorio donde se encuentran los .py principales
-
-```
-cd src
+```bash
+git clone https://github.com/JesusLeal0423/jcmg_StiroPruning-Implementaciones.git
 ```
 
-Ejecutar el generador de embedings
+### 2. Construir el proyecto
 
+Primero nos colocamos en la raiz del proyecto:
 ```
-python src/generate_embedding.py --modelo st1
-```
-
-* Modelos disponibles:
-* `use`: Universal Sentence Encoder
-* `st1`: all-mpnet-base-v2
-* `st2`: all-MiniLM-L6-v2
-* `st3`: paraphrase-mpnet-base-v2
-
-### 2. Ejecutar Clustering
-
-```
-python clustering_pipeline.py --modelo <name_model> --max_evals <int>
+cd jcmg_StiroPruning
 ```
 
-### Realizar Predicciones
+Para posteriormente contruir la imagen del servicio de FastApi
+```
+docker compose build
+```
+Este comando realiza:
+* La construcción del servicio
+* Instala automáticamente todas las dependencias definidas en requirements.txt.
+
+### 3. Iniciar los servicios
+
+Una vez construida la imagen, ejecutar:
 
 ```
-python predict.py --modelo <name_model> --params bayesiano --embeddings_path "../test/embeddings/<name_model>" --params_dir "../test/Modelos"
+docker compose up
+```
+o
+```
+docker compose up -d
+```
+para ejecutarlo en segundo plano.
+
+Docker va a iniciar automáticamente:
+
+* El servicio FastAPI.
+* La base de datos ChromaDB.
+
+### 4. Verificar los contenedores
+
+```
+docker ps
 ```
 
+Deberian aparecer dos contenedores parecidos a:
+```
+stiro_api
+chromadb
+```
+
+### 5. Acceder a la API
+
+Una vez iniciados los contenedores, la intefaz Swagger estará disponible en:
+```
+http://localhost:8001/docs
+```
+Desde esa interfaz pueden ejecutarse todos los endpoints disponibles.
+
+## Complemetos
+
+### 1. Detener los servicios
+```
+docker compose down
+```
+
+### 2. Reconstruir el proyecto
+En caso de realizar modificaciones al código fuente:
+```
+docker compose up --build
+```
 ## Implementación realizada
 
 Se implementó el servicio encargado de iniciar la etapa de preparación del sistema STIRO PRUNING. Esta funcionalidad permite:
@@ -132,90 +139,98 @@ Se implementó el servicio encargado de iniciar la etapa de preparación del sis
 - Registrar el estado de ejecución mediante logs.
 - Retornar una respuesta en formato JSON con el resultado de la operación.
 
-## Ejecución del proyecto
 
-### 1. Clonar el repositorio
 
-```bash
-git clone https://github.com/JesusLeal0423/jcmg_StiroPruning-Implementaciones.git
-cd jcmg_StiroPruning
+## 📈 Flujo del sistema
+
+Una vez desplegado el sistema, el flujo recomendado seria:
+
+### 1. Preparación
+
+Ejecutar el endpoint:
+```
+POST /api/v1/preparacion/iniciar
+```
+Este proceso realiza automáticamente:
+
+* Generación STORI.
+* Perfilado del dataset.
+* Validación de columnas.
+* Generación de embeddings.
+* Almacenamiento de embeddings en ChromaDB.
+
+
+### 2. Carga o Entrenamiento del clasificador
+
+Una vez generado el clustering, ejecutar el endpoint:
+```
+POST /loadClassifier
+```
+Si el clasificador solicitado no existe, el sistema lo entrenará automáticamente y almacenará el modelo para futuras consultas.
+
+#### Ejemplo de petición
 ```
 
-### 2. Instalar dependencias
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Ejecutar el servicio
-
-```bash
-uvicorn src.predictApi.main:app --reload
-```
-
-### 4. Acceder al servicio
-
-Una vez iniciado, el servicio estará disponible en:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-## Flujo de ejecución
-
-1. Recepción de la solicitud.
-2. Validación de la estructura mínima requerida.
-3. Generación de la representación STORI.
-4. Exportación de resultados a CSV.
-5. Perfilado de datos.
-6. Ejecución de validaciones.
-7. Registro de logs.
-8. Retorno de respuesta JSON.
-
-## Endpoints agregados
-
-Se agregaron los siguientes endpoints para automatizar el flujo de preparación y predicción.
-
-### POST /api/v1/preparacion/iniciar
-
-Inicia la etapa de preparación de los datos y realiza automáticamente:
-
-- Generación de la consulta STORI.
-- Exportación del dataset.
-- Perfilado del archivo CSV.
-- Registro del proceso.
-- Retorno de un resumen de la operación.
-
----
-
-### POST /api/v1/prediction/iniciar
-
-Ejecuta el proceso completo de predicción:
-
-- Generación del embedding.
-- Clasificación mediante un modelo MLP.
-- Predicción del grupo.
-- Verificación de existencia del vector dentro del grupo.
-- Obtención de los 10 vectores más similares.
-- Generación del archivo de similitudes.
-
-La solicitud debe incluir el dominio de los embeddings ya almacenados en
-ChromaDB. El servicio consulta la colección `stori_<domain>` y devuelve los
-vecinos junto con la distancia calculada por ChromaDB.
-
-```json
 {
-  "modelo": "st1",
-  "classifier_model": "mlp",
-  "vector_input": ["aguascalientes", "2023", "hombre", "0.322", "100k"],
-  "domain": "sample",
-  "n_results": 10
+  "modelo": "st1",  // Modelo a elegir 
+  "params": "separate_grid",
+  "models_dir": "test/Modelos",
+  "ds_originales_path": "./data/sample.csv",
+  "name_modelo": "mlp",
+  "use_adjusted": false,
+  "embeddings_path": "test/Embeddings"
 }
+
+```
+* Modelos disponibles:
+* `use`: Universal Sentence Encoder
+* `st1`: all-mpnet-base-v2
+* `st2`: all-MiniLM-L6-v2
+* `st3`: paraphrase-mpnet-base-v2
+
+## 3. Predicción
+
+Finalmente ejecutar:
+```
+POST /api/v1/prediction/iniciar
+```
+Este endpoint:
+
+* Genera el embedding de la consulta.
+* Clasifica el vector.
+* Consulta ChromaDB.
+* Recupera los vectores más similares.
+* Devuelve la respuesta en formato JSON.
+
+#### Ejemplo de petición
 ```
 
----
+{
+  "modelo": "st1",    // Modelo a elegir 
+  "classifier_model": "mlp",
+  "use_adjusted": false,
+  "vector_input": [   // Consulta a realizar
+    "Total.Total",
+    "2000",
+    "Total.Total.H",
+    "100k",
+    "0.0668115769278366"
+  ],
+  "domain": "sample",
+  "n_results": 10   // Numero de resultados similares a retornar
+}
 
-### GET /api/v1/prediction/status/{id_query}
+```
+* Modelos disponibles:
+* `use`: Universal Sentence Encoder
+* `st1`: all-mpnet-base-v2
+* `st2`: all-MiniLM-L6-v2
+* `st3`: paraphrase-mpnet-base-v2
+
+
+## 📒 Endpoints Extra
+
+### 1. GET /api/v1/prediction/status/{id_query} y tambien GET /api/v1/prediction/status
 
 Permite consultar el estado de una predicción previamente iniciada.
 
@@ -224,91 +239,19 @@ Devuelve información como:
 - Identificador de la consulta.
 - Estado de la predicción.
 - Resultado generado (cuando la ejecución ha finalizado).
-  
-## Implementación de ChromaDB
 
-Se incorporó una base de datos vectorial utilizando **ChromaDB** para almacenar de forma persistente los embeddings generados durante la etapa de preparación.
+Pide ingresar como parametros el id de la consulta que se vaya querer obtener infromación
 
-Durante el script de la generación de  embeddings el sistema realiza automáticamente las siguientes actividades:
+### 2. /listClassifiers
 
-- Crea o reutiliza una colección asociada al dominio del conjunto de datos.
-- Genera un identificador único para cada registro.
-- Almacena el texto STORI utilizado para generar el embedding.
-- Guarda el vector de embedding correspondiente.
-- Registra metadatos asociados a cada registro, incluyendo:
-  - Modelo de embeddings utilizado.
-  - Identificador de la preparación.
-  - Campo de referencia.
-  - Campo de observación.
-- Inserta los registros por lotes para mejorar el rendimiento durante el almacenamiento.
+Permite consultar con cuantos modelos contamos ya disponibles
 
-Con esta implementación, los embeddings estaran almacenados en una base de datos vectorial, permitiendo su reutilización en futuras etapas del sistema sin necesidad de volver a generarlos.
+## 🗃️ Persistencia
 
-### Script para Chroma
+La base de datos ChromaDB utiliza un volumen Docker, por lo que:
 
-Se incorporo un script el cual muestra las colecciones que ser guardaron en Chroma
-
-Ejecutar el archivo: ```ver_chroma.py``` con python ```src/Modules/ver_chroma.py```
-
-```bash
-cd jcmg_StiroPruning/
-
-python src/Modules/ver_chroma.py
-```
-
-## Consultas en chroma
-
-Ejemplo en la etapa de /loadClassifier
-```bash
-{
-  "modelo": "st1",
-  "params": "separate_grid",
-  "models_dir": "test/Modelos",
-  "ds_originales_path": "./data/sample.csv",
-  "name_modelo": "mlp",
-  "use_adjusted": false,
-  "embeddings_path": "test/Embeddings"
-}
-```
-
-Ejemplo en la etapa de prediction/iniciar
-
-```bash
-{
-  "modelo": "st1",
-  "classifier_model": "mlp",
-  "use_adjusted": false,
-  "vector_input": [
-    "Total.Total",
-    "2000",
-    "Total.Total.H",
-    "100k",
-    "0.0668115769278366"
-  ],
-  "domain": "sample",
-  "n_results": 10
-}
-```
-
-## Se incorporo un contenedor docker para la Base de datos chroma 
-
-### Para poder crear el contenedor pega este comando en terminal
-
-```bash
-docker run -d \
-  --name chromadb \
-  -p 8000:8000 \
-  -v chroma_data:/chroma/chroma \
-  chromadb/chroma:0.5.5
-```
-Con eso se creara el contenedor y esta listo para ejecutarse 
-
-Se debe ejecutar el generador de embedings para poder observar que se guarda en chorma
-
-```
-python src/generate_embedding.py --modelo st1
-```
-
+Los embeddings permanecen almacenados aunque el contenedor sea detenido.
+No es necesario volver a generar los embeddings mientras el volumen no sea eliminado.
 
 ## 📝 Notas Adicionales
 

@@ -1,9 +1,9 @@
 import pandas as pd
-from Modules.model_manager import EmbeddingModelManager
+from src.Modules.model_manager import EmbeddingModelManager
 import time
 import os
 import argparse
-from Modules.chroma_service import ChromaService
+from src.Modules.chroma_service import ChromaService
 
 
 # Argumentos de línea de comandos para seleccionar el modelo
@@ -31,9 +31,10 @@ def generar_embeddings(
     modelo,
     input_data="data/sample.csv",
     output_dir="test",
-    resultado_preparacion=None
+    resultado_preparacion=None,
+    saveCSV=None
 ):
-
+    print(f"saveCSV generar_embeddings: {saveCSV}")
     # Cargar el dataset de intents
     start_time = time.time()
     print("\nCargando dataset...")
@@ -87,7 +88,7 @@ def generar_embeddings(
         # Generar embeddings
     start_time = time.time()
     print(f"\nGenerando embeddings para {nombre}...")
-    embeddings = manager.embed(nombre, all_intents, save_csv=True)
+    embeddings = manager.embed(nombre, all_intents, save_csv=bool(saveCSV))
 
     tiempo_embeddings = time.time() - start_time
     print(f"Embeddings generados en {tiempo_embeddings:.2f} segundos\n")
@@ -96,10 +97,10 @@ def generar_embeddings(
     start_time = time.time()
     print("\nGuardando embeddings en ChromaDB...")
 
-    # Definir dominio a partir del nombre del archivo de entrada
+    # Para definir el nombre del dominio dependiendo del dataset q se este cargando
     domain = os.path.splitext(os.path.basename(input_data))[0].lower()
 
-    # Crear instancia de Chroma
+    # Crear la conexion con Chroma
     chroma = ChromaService(collection_prefix="stori")
 
     # ID de preparación para diferenciar ejecuciones
@@ -111,7 +112,7 @@ def generar_embeddings(
     # IDs únicos por registro
     ids = [f"{domain}_{id_preparacion}_{i}" for i in range(len(all_intents))]
 
-    # Documents: texto STORI que se embebe
+    # Documents: texto STORI a convertir a embeddings
     documents = all_intents
 
     # Metadatos por registro
@@ -119,7 +120,6 @@ def generar_embeddings(
     for i in range(len(all_intents)):
         metadatas.append({
             "modelo": nombre,
-            #"label": int(label),
             "id_preparacion": id_preparacion,
             "reference": str(reference_column.iloc[i]),
             "observation": str(observation_column.iloc[i])
@@ -147,29 +147,40 @@ def generar_embeddings(
         for error in resultado_chroma["failed_batches"]:
             print(error)
 
-    start_time = time.time()
-    # Crear DataFrame con las columnas Reference y Observation al inicio, seguidas de los embeddings
-    print("\nConcatenando columnas Reference y Observation con los embeddings")
-    embeddings_df = pd.DataFrame(embeddings)
+    
+    time_saved = None
+    if saveCSV:
+        
+        start_time = time.time()
+        
+        # Crear DataFrame con las columnas Reference y Observation al inicio, seguidas de los embeddings
+        print("\nConcatenando columnas Reference y Observation con los embeddings")
+        embeddings_df = pd.DataFrame(embeddings)
 
-    # Agregar las columnas Reference y Observation al inicio
-    final_df = pd.DataFrame({
-        'Reference': reference_column,
-        'Observation': observation_column
-    })
+        # Agregar las columnas Reference y Observation al inicio
+        final_df = pd.DataFrame({
+            'Reference': reference_column,
+            'Observation': observation_column
+        })
 
-    # Concatenar con los embeddings
-    final_df = pd.concat([final_df, embeddings_df], axis=1)
+        # Concatenar con los embeddings
+        final_df = pd.concat([final_df, embeddings_df], axis=1)
 
-    # Guardar el DataFrame completo
-    model_dir = os.path.join(f"{output_dir}/embeddings", nombre)
-    os.makedirs(model_dir, exist_ok=True)
-    save_csv_path = os.path.join(model_dir, f"{nombre}_complete.csv")
+        # Guardar el DataFrame completo
+        model_dir = os.path.join(f"{output_dir}/embeddings", nombre)
+        os.makedirs(model_dir, exist_ok=True)
+        save_csv_path = os.path.join(model_dir, f"{nombre}_complete.csv")
 
-    final_df.to_csv(save_csv_path, index=False)
-    time_saved = time.time() - start_time
-    print(f"Embeddings con columnas Reference y Observation guardados en '{save_csv_path}'")
-    print(f"Embeddings guardados en {time_saved:.2f} segundos")
+        final_df.to_csv(save_csv_path, index=False)
+        time_saved = time.time() - start_time
+        print(f"Embeddings con columnas Reference y Observation guardados en '{save_csv_path}'")
+        print(f"Embeddings guardados en {time_saved:.2f} segundos") 
+        
+        time_saved = time.time() - start_time        
+        print(f"Embeddings guardados en {time_saved:.2f} segundos") 
+    
+    if saveCSV is True:
+        print("Enbeddigns guardados localmente en CSV")
 
     # Guardar los tiempos en un CSV
     times = pd.DataFrame([{
@@ -183,7 +194,7 @@ def generar_embeddings(
         "tiempo_carga_modelo": round(tiempo_carga_modelo, 2),
         "tiempo_generacion_embeddings": round(tiempo_embeddings, 2),
         "tiempo_guardado_chroma": round(tiempo_chroma, 2),
-        "tiempo_guardado_embeddings_csv": round(time_saved, 2)
+        "tiempo_guardado_embeddings_csv": round(time_saved, 2) if time_saved is not None else None
     }])
 
     csv_path = f"{output_dir}/embeddings/times_embeddings.csv"
@@ -197,7 +208,10 @@ def generar_embeddings(
     print(f"\nTiempos guardados en '{csv_path}'")
     
 
-#Este se hace para que el script pueda ejecutarse desde la terminal
+
+#Quitar los comentarios para que el script pueda ejecutarse desde la terminal
+#Pero todo de generar_embeddings() se ejecuta desde preparacion_service.py
+'''
 if __name__ == "__main__":
     from Preparacion.preparacion_service import iniciar_preparacion
     
@@ -214,3 +228,4 @@ if __name__ == "__main__":
         output_dir=args.output_dir,
         resultado_preparacion=resultado_preparacion
     )
+'''

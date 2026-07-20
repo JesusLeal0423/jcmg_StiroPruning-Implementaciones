@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from pydantic import BaseModel, Field
 import numpy as np
 import pandas as pd
@@ -15,8 +15,6 @@ import traceback
 app = FastAPI()
 classifier_manager = ClassificationManager(random_state=42)
 dataset_originales_path = "./data/sample.csv"
-
-
     
 class TrainRequest(BaseModel):
     modelo: str = "st1"
@@ -130,9 +128,7 @@ def load_classifier(request: TrainRequest):
         
         #########################################
         
-        model_loaded = classifier_manager.load_model(
-            model_path=model_dir
-        )
+        #model_loaded = classifier_manager.load_model(model_path=model_dir)
         
         classifier_add = {
             "modelo_name": request.modelo,
@@ -257,7 +253,9 @@ def predict(request: PredictRequest):
     try:
         model_suffix = "_adjusted" if request.use_adjusted == True else  ""
         # Preparar vector de entrada
+        
         vector_input = request.vector_input
+        '''
         if request.use_adjusted:
             spatial = vector_input[0]
             temporal = vector_input[1]
@@ -265,9 +263,13 @@ def predict(request: PredictRequest):
             reference = vector_input[3]
             observable = vector_input[4]
             vector_input = [spatial, temporal, interest]
+        '''
         
         # query_string = limpiar_texto(vector_input)
-        query_string = ' '.join([str(x).replace(' ', '_') for x in vector_input])
+        #query_string = ' '.join([str(x).replace(' ', '_') for x in vector_input])
+        query_string = ' '.join(
+            [str(x).replace(' ', '_') for x in vector_input[:3]]
+        )
         print(f"Vector de entrada procesado: {query_string}")
         # Selección del modelo de embeddings
         modelos_dict = {
@@ -492,10 +494,21 @@ def predict(request: PredictRequest):
                 n_results=request.n_results
             )
             print("--- Resultado en Chroma ---")
-            print(resultado)
+            #print(resultado)
         except CollectionNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+        
+        print("\n========== RESULTADOS CHROMADB ==========\n")
+
+        for i in range(len(resultado["ids"][0])):
+            print(f"Resultado {i+1}")
+            print(f"ID         : {resultado['ids'][0][i]}")
+            print(f"Distancia  : {resultado['distances'][0][i]:.6f}")
+            print(f"Documento  : {resultado['documents'][0][i]}")
+            print(f"Metadatos  : {resultado['metadatas'][0][i]}")
+            print("----------------------------------------")
+            
         top_10 = []
 
         ids = resultado["ids"][0]
@@ -516,7 +529,7 @@ def predict(request: PredictRequest):
         response["neighbors"] = top_10
 
         return response
-    
+        
     except Exception as e:
         traceback.print_exc()
         print(type(e))
@@ -576,15 +589,30 @@ def listar_predicciones():
 ################################################
 #Endpoint para iniciar la preparación de datos
 
+
+class saveCSVEmbeddings(BaseModel):
+        saveCSV_Local: bool = Field(
+        default=False,
+        description="Indica si se deben guardar los embeddings generados en un CSV."
+    )
+
 @app.post("/api/v1/preparacion/iniciar")
-def preparar_datos():
+def preparar_datos(Body: saveCSVEmbeddings):
     try:
-        resultado = iniciar_preparacion()
-        return resultado
+        
+        resultado = iniciar_preparacion(saveCSV=Body.saveCSV_Local)
+            
+        return  {
+            "resultado": resultado,
+            "saveCSV": Body.saveCSV_Local
+        }
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=str(e)
         )
+
 ################################################
+
+
