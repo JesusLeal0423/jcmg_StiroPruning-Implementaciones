@@ -126,21 +126,6 @@ En caso de realizar modificaciones al código fuente:
 ```
 docker compose up --build
 ```
-## Implementación realizada
-
-Se implementó el servicio encargado de iniciar la etapa de preparación del sistema STIRO PRUNING. Esta funcionalidad permite:
-
-- Recibir solicitudes mediante un endpoint REST.
-- Validar la estructura mínima requerida de los datos de entrada.
-- Generar la representación STORI a partir de los datos recibidos.
-- Exportar los resultados a archivos CSV.
-- Realizar el perfilado de los datos generados.
-- Ejecutar validaciones sobre la información procesada.
-- Registrar el estado de ejecución mediante logs.
-- Retornar una respuesta en formato JSON con el resultado de la operación.
-
-
-
 ## 📈 Flujo del sistema
 
 Una vez desplegado el sistema, el flujo recomendado seria:
