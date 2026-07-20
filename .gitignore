@@ -5,7 +5,7 @@ __pycache__/
 .vscode/
 node_modules/
 *.csv
-*.json
+#*.json
 *.pkl
 *.npy
 *.png

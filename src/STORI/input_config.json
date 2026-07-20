@@ -1,0 +1,50 @@
+{
+    "_id": "68a243117f4486a8441a3395",
+    "id_task": "2f5affb98e07a7ed1a9c81bbdff82ad19e892cfd1dafe21d3839d7852053f0ce",
+    "timestamp": "2025-08-17T21:01:05.609000",
+    "observatory": {
+        "csv_path": "../../data/H_Rates.csv",
+        "observableVariables": {
+            "RawRatio100k": "TASA_100K"
+            },
+        "interestVariables": {
+                "Sex": "SEXO",
+                "Age": "RANGO_EDAD",
+                "DeathCause": "CAUSA_DEF"
+            },
+        "spatialVariables": {
+                "State": "ENT_CVE",
+                "City": "MUN_CVE"
+            },
+        "temporalVariables": {
+                "formatDate": "%Y",
+                "Date": "ANIO_REGIS"
+            },
+        "Levels": ["ENT_NAME(Country)", "CAUSA_DEF(Indice)", "CAUSE_DEF(C,X)", "ENT_NAME", "TYPE_TASA"],
+
+        "Product_Pie_Graph": {
+                "level": [2, 3, 4, 5],
+                "params": [{"paramsLevel_2": {} }, 
+                    {"paramsLevel_3": {}}, 
+                    {"paramsLevel_4": {}}, 
+                    {"paramsLevel_5": {}}]
+            },
+        "Process_Top": {
+                "level": [2, 3, 4, 5],
+                "top": 5,
+                "params": [{"paramsLevel_1": {}}, {"paramsLevel_2": {}}, {"paramsLevel_3": {}}]
+            },
+        "Product_Boxplot_Graph": {
+                "level": [2, 3, 4, 5],
+                "params": [{"paramsLevel_1": {}}, {"paramsLevel_2": {}}, {"paramsLevel_3": {}}]
+            },
+        "Product_Line_Graph": {
+                "level": [2, 3, 4, 5],
+                "params": [{"paramsLevel_1": {}}, {"paramsLevel_2": {}}, {"paramsLevel_3": {}}]
+            },
+        "Product_Regresion_Graph": {
+                "level": [2, 3, 4, 5],
+                "params": [{"paramsLevel_1": {}}, {"paramsLevel_2": {}}, {"paramsLevel_3": {}}]
+            }
+        }
+}
