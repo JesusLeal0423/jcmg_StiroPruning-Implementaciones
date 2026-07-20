@@ -34,6 +34,7 @@ tf_env/
 
 # Archivos de test o resultados
 test/
+test_DS3/
 
 # Configuraciones de IDEs/editors
 .vscode/
