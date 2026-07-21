@@ -198,8 +198,8 @@ Este endpoint:
     "Total.Total",
     "2000",
     "Total.Total.H",
-    "100k",
-    "0.0668115769278366"
+    "0.0668115769278366", 
+    "100k"
   ],
   "domain": "sample",
   "n_results": 10   // Numero de resultados similares a retornar
