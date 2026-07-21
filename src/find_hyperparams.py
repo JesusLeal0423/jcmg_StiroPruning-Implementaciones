@@ -3,43 +3,40 @@ import numpy as np
 import time
 import os
 import argparse
-from Modules.clustering_manager import ClusteringManager
+from src.Modules.clustering_manager import ClusteringManager
 # from Modules.grid_search import GridSearchManager
 from hyperopt import hp
 
-def main():
-    
-    # -------------------------------------------------------------------------------
-    # Argumentos de línea de comandos para seleccionar el modelo y los hiperparámetros
-    parser = argparse.ArgumentParser(description="Buscar hiperparámetros óptimos para clustering con embeddings ajustados (spatial, temporal, interest).")
-    parser.add_argument("--modelo", type=str, choices=["use", "st1", "st2", "st3"], required=True, help="Modelo de embeddings a utilizar: use, st1, st2 o st3")
-    parser.add_argument("--max_evals", type=int, default=10, help="Número de evaluaciones para cada búsqueda")
-    parser.add_argument("--label_lower", type=int, default=100, help="Límite inferior para las etiquetas")
-    parser.add_argument("--label_upper", type=int, default=1000, help="Límite superior para las etiquetas")
-    parser.add_argument("--use_adjusted", action="store_true", help="Usar embeddings ajustados con columnas spatial, temporal e interest")
-    parser.add_argument("--output_dir", type=str, default="test", help="Directorio de salida para los resultados")
-    # Parse los argumentos
-    args = parser.parse_args()
-    
-    path_test  = f"../{args.output_dir}"
+
+def run_grid_search(
+    modelo: str,
+    output_dir: str = "test",
+    use_adjusted: bool = False,
+    max_evals: int = 10,
+    label_lower: int = 100,
+    label_upper: int = 1000
+):
+    # Aquí pegas TODO el contenido que actualmente está
+    # debajo de parser.parse_args()
+    path_test  = output_dir
     start_time = time.time()
     # Verificar si el modelo es válido
-    if args.modelo not in ["use", "st1", "st2", "st3"]:
+    if modelo not in ["use", "st1", "st2", "st3"]:
         raise ValueError("Modelo no válido. Debe ser 'use', 'st1', 'st2' o 'st3'.")
     
     # Determinar la ruta de embeddings y sufijos según si se usan ajustados o no
-    if args.use_adjusted:
-        path_embeddings = f"{path_test}/embeddings/{args.modelo}/{args.modelo}.npy"
+    if use_adjusted:
+        path_embeddings = f"{path_test}/embeddings/{modelo}/{modelo}.npy"
         output_suffix = "_adjusted"
-        print(f"Modelo seleccionado: {args.modelo} (usando embeddings ajustados)")
+        print(f"Modelo seleccionado: {modelo} (usando embeddings ajustados)")
     else:
-        path_embeddings = f"{path_test}/embeddings/{args.modelo}/{args.modelo}.npy"
+        path_embeddings = f"{path_test}/embeddings/{modelo}/{modelo}.npy"
         output_suffix = ""
-        print(f"Modelo seleccionado: {args.modelo} (usando embeddings originales)")
+        print(f"Modelo seleccionado: {modelo} (usando embeddings originales)")
     
     # Verificar si el directorio de embeddings existe
-    if not os.path.exists(f"{path_test}/embeddings/{args.modelo}"):
-        raise FileNotFoundError(f"El directorio de embeddings para el modelo {args.modelo} no existe.\n --> {path_test}/embeddings/{args.modelo}")
+    if not os.path.exists(f"{path_test}/embeddings/{modelo}"):
+        raise FileNotFoundError(f"El directorio de embeddings para el modelo {modelo} no existe.\n --> {path_test}/embeddings/{modelo}")
 
     # Verificar que el archivo de embeddings específico existe
     assert os.path.exists(path_embeddings), f"Archivo de embeddings no encontrado en {path_embeddings}"
@@ -51,7 +48,7 @@ def main():
     print(f"Tiempo de carga del archivo de embeddings: {tiempo_carga:.2f} segundos")
     
     start_time = time.time()
-    clustering = ClusteringManager(random_state=42, model=args.modelo, n_jobs=-1)
+    clustering = ClusteringManager(random_state=42, model=modelo, n_jobs=2) #Se cambio temporalmente para que solo ocupe 2 nucles y no todos
 
     # # Ajustar rangos de hiperparámetros para embeddings con información adicional
     # if args.use_adjusted:
@@ -102,7 +99,7 @@ def main():
     
     
     print(f"\nEjecutando todas las búsquedas de hiperparámetros")
-    print(f"Directorio de modelos: {path_test}/Modelos_{args.modelo}{output_suffix}")
+    print(f"Directorio de modelos: {path_test}/Modelos_{modelo}{output_suffix}")
     
     # # ------------------- Random Search -------------------
     # print("\n" + "="*50)
@@ -148,7 +145,7 @@ def main():
     print("="*50)
     
     # Configurar parámetros separados para UMAP y HDBSCAN
-    if args.use_adjusted:
+    if use_adjusted:
         #-------------------------------------------------
         # REALES
         #-------------------------------------------------
@@ -197,7 +194,7 @@ def main():
         umap_space=umap_param_grid,
         hdbscan_space=hdbscan_param_grid,
         save_models=True,
-        modelos_dir=f"{path_test}/Modelos_{args.modelo}{output_suffix}",
+        modelos_dir=f"{path_test}/Modelos_{modelo}{output_suffix}",
     )
     
     # Depuración: mostrar estructura real del diccionario retornado
@@ -223,8 +220,8 @@ def main():
     # Guardar resultados
     grid_summary = {
         'optimization_method': 'separate_gridsearch',
-        'model': args.modelo,
-        'use_adjusted': args.use_adjusted,
+        'model': modelo,
+        'use_adjusted': use_adjusted,
         **umap_params,
         **hdbscan_params,
         'final_n_clusters': n_clusters,
@@ -235,7 +232,7 @@ def main():
     tiempo_grid = time.time() - start_time
     print(f"Tiempo de Grid Search: {tiempo_grid:.2f} segundos")
     
-    pd.DataFrame([grid_summary]).to_csv(f"{path_test}/grid_{args.modelo}{output_suffix}.csv", index=False)
+    pd.DataFrame([grid_summary]).to_csv(f"{path_test}/grid_{modelo}{output_suffix}.csv", index=False)
     print(f"Grid Search completado en {time.time() - start_time:.2f} segundos.")
     print(f"Mejores parámetros UMAP: {umap_params}")
     print(f"Mejores parámetros HDBSCAN: {hdbscan_params}")
@@ -250,11 +247,11 @@ def main():
     # RESUMEN FINAL DE TODAS LAS BÚSQUEDAS
     # ===============================================================================
     print("\n" + "="*80)
-    print(f"RESUMEN FINAL - Modelo: {args.modelo} {'(ajustado)' if args.use_adjusted else '(original)'}")
+    print(f"RESUMEN FINAL - Modelo: {modelo} {'(ajustado)' if use_adjusted else '(original)'}")
     print("="*80)
     print(f"Dimensiones embeddings: {embeddings.shape}")
-    print(f"Evaluaciones por búsqueda: {args.max_evals}")
-    
+    print(f"Evaluaciones por búsqueda: {max_evals}")
+
     print(f"\nGrid Search Separado - Mejores parámetros:")
     print(f"   UMAP:")
     for key, value in best_grid_params['umap_params'].items():
@@ -270,17 +267,74 @@ def main():
         print(f"   DBCV Score: No disponible")
     
     print(f"\nArchivos guardados en: {path_test}")
-    umap_results.to_csv(f"{path_test}/Modelos_{args.modelo}{output_suffix}/umap_results.csv", index=False)
-    hdbscan_results.to_csv(f"{path_test}/Modelos_{args.modelo}{output_suffix}/hdbscan_results.csv", index=False)
-    print(f"Resultados CSV: {path_test}/Modelos_{args.modelo}{output_suffix}")
-    print(f"Modelos guardados en: {path_test}/Modelos_{args.modelo}{output_suffix}/")
+    umap_results.to_csv(f"{path_test}/Modelos_{modelo}{output_suffix}/umap_results.csv", index=False)
+    hdbscan_results.to_csv(f"{path_test}/Modelos_{modelo}{output_suffix}/hdbscan_results.csv", index=False)
+    print(f"Resultados CSV: {path_test}/Modelos_{modelo}{output_suffix}")
+    print(f"Modelos guardados en: {path_test}/Modelos_{modelo}{output_suffix}/")
     
+    '''
     # Mostrar archivos generados
     generated_files = [
-        # f"random_{args.modelo}{output_suffix}.csv",
-        # f"bayesian_{args.modelo}{output_suffix}.csv",
-        f"grid_{args.modelo}{output_suffix}.csv"
+        # f"random_{modelo}{output_suffix}.csv",
+        # f"bayesian_{modelo}{output_suffix}.csv",
+        f"grid_{modelo}{output_suffix}.csv"
     ]
+    '''
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description="Buscar hiperparámetros óptimos para clustering"
+    )
+
+    parser.add_argument(
+        "--modelo",
+        type=str,
+        choices=["use", "st1", "st2", "st3"],
+        required=True
+    )
+
+    parser.add_argument(
+        "--max_evals",
+        type=int,
+        default=10
+    )
+
+    parser.add_argument(
+        "--label_lower",
+        type=int,
+        default=100
+    )
+
+    parser.add_argument(
+        "--label_upper",
+        type=int,
+        default=1000
+    )
+
+    parser.add_argument(
+        "--use_adjusted",
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="test"
+    )
+
+
+    args = parser.parse_args()
+
+
+    run_grid_search(
+        modelo=args.modelo,
+        output_dir=args.output_dir,
+        use_adjusted=args.use_adjusted,
+        max_evals=args.max_evals,
+        label_lower=args.label_lower,
+        label_upper=args.label_upper
+    )    
 
 
 if __name__ == "__main__":

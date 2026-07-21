@@ -4,7 +4,7 @@ import time
 import os
 import argparse
 from src.Modules.chroma_service import ChromaService
-
+import numpy as np
 
 # Argumentos de línea de comandos para seleccionar el modelo
 parser = argparse.ArgumentParser(description="Generar embeddings con el modelo seleccionado.")
@@ -52,7 +52,7 @@ def generar_embeddings(
     observation_column = data_sample['observation'].copy()
 
         # Extracción de las variables a convertir a embeddings
-    columnas_embedding = data_sample[['spatial', 'temporal', 'interest']]
+    columnas_embedding = data_sample[['spatial', 'temporal', 'interest', 'observation', 'reference']]
         # Convertir a sentencia
     all_intents = columnas_embedding.astype(str).map(lambda x: x.replace(' ', '_')).agg(' '.join, axis=1).tolist()
 
@@ -89,13 +89,33 @@ def generar_embeddings(
     start_time = time.time()
     print(f"\nGenerando embeddings para {nombre}...")
     embeddings = manager.embed(nombre, all_intents, save_csv=bool(saveCSV))
+    
+    model_dir = os.path.join(
+        output_dir,
+        "embeddings",
+        nombre
+    )
+
+    os.makedirs(model_dir, exist_ok=True)
+
+    embedding_path = os.path.join(
+        model_dir,
+        f"{nombre}.npy"
+    )
+
+    np.save(
+        embedding_path,
+        embeddings
+    )
+
+    print(f"Embeddings numpy guardados en: {embedding_path}")
 
     tiempo_embeddings = time.time() - start_time
     print(f"Embeddings generados en {tiempo_embeddings:.2f} segundos\n")
 
     # Guardar embeddings en ChromaDB por dominio
     start_time = time.time()
-    print("\nGuardando embeddings en ChromaDB...")
+    print("\nGuardando embeddings en ChromaDB...") 
 
     # Para definir el nombre del dominio dependiendo del dataset q se este cargando
     domain = os.path.splitext(os.path.basename(input_data))[0].lower()
@@ -124,7 +144,10 @@ def generar_embeddings(
             "reference": str(reference_column.iloc[i]),
             "observation": str(observation_column.iloc[i])
         })
-
+    
+    #Con esto reseteamos la coleccion para que no se duploquen los embeddings
+    chroma.reset_collection(domain)
+    
     # Insertar embeddings en la colección del dominio
     resultado_chroma = chroma.add_embeddings(
         domain=domain,

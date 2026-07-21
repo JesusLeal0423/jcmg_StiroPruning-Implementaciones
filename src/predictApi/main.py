@@ -214,6 +214,18 @@ def save_prediction_log(query_string: str, predicted_label: int, confidence: flo
         return None
 
 
+#====================================================
+# Para poder las colecciones que contiene
+
+from src.Modules.ver_chroma import ChromaInfoService
+info_chroma = ChromaInfoService()
+
+@app.get("/api/v1/chroma/colecciones")
+def obtener_colecciones(limit: int = 5):
+    return info_chroma.listar_colecciones(limit)
+
+#====================================================
+
 
 # Modelo de entrada para la API
 class PredictRequest(BaseModel):
@@ -268,7 +280,7 @@ def predict(request: PredictRequest):
         # query_string = limpiar_texto(vector_input)
         #query_string = ' '.join([str(x).replace(' ', '_') for x in vector_input])
         query_string = ' '.join(
-            [str(x).replace(' ', '_') for x in vector_input[:3]]
+            [str(x).replace(' ', '_') for x in vector_input[:5]]
         )
         print(f"Vector de entrada procesado: {query_string}")
         # Selección del modelo de embeddings
@@ -591,6 +603,11 @@ def listar_predicciones():
 
 
 class saveCSVEmbeddings(BaseModel):
+        modelo: str = Field(
+        default="st1",
+        description="Modelo de embeddings a usar: 'st1', 'st2', 'st3' o 'use'."
+        )
+        
         saveCSV_Local: bool = Field(
         default=False,
         description="Indica si se deben guardar los embeddings generados en un CSV."
@@ -599,11 +616,11 @@ class saveCSVEmbeddings(BaseModel):
 @app.post("/api/v1/preparacion/iniciar")
 def preparar_datos(Body: saveCSVEmbeddings):
     try:
-        
-        resultado = iniciar_preparacion(saveCSV=Body.saveCSV_Local)
+        resultado = iniciar_preparacion(  modelo=Body.modelo, saveCSV=Body.saveCSV_Local)
             
         return  {
             "resultado": resultado,
+            "modelo": Body.modelo,
             "saveCSV": Body.saveCSV_Local
         }
 

@@ -1,9 +1,11 @@
 import pandas as pd
 import uuid
 import os
+import chromadb
 
 from src.STORI.STORI import load_config, generar_stori, exportar_csv
 from src.perfiladoCSV import perfilado_csv
+from src.find_hyperparams import run_grid_search
 
 #from STORI.STORI import load_config, generar_stori, exportar_csv
 #from perfiladoCSV import perfilado_csv
@@ -15,7 +17,7 @@ archivo_log = os.path.join(
     "preparaciones.log"
 )
 
-def iniciar_preparacion(modelo="st1", saveCSV=None):
+def iniciar_preparacion(modelo= None, saveCSV=None):
 
     print("Cargando configuración STORI...")
 
@@ -112,6 +114,19 @@ def iniciar_preparacion(modelo="st1", saveCSV=None):
             },
             saveCSV=saveCSV
         )
+        
+        print("Antes de ejecutar optimización de clustering...")
+        print("\nEjecutando optimización de clustering...")
+
+        run_grid_search(
+            modelo=modelo,
+            output_dir="test",
+            use_adjusted=False,
+            max_evals=10
+        )
+        
+        print("\nGrid Search finalizado.")
+        
     except Exception as e:
         import traceback
         traceback.print_exc()

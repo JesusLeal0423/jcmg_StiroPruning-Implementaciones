@@ -47,6 +47,17 @@ class ChromaService:
                 f"No existe una colección para el dominio '{domain}' "
                 f"({collection_name})."
             ) from exc
+    def reset_collection(self, domain: str):
+        collection_name = self.get_collection_name(domain)
+        try:
+            self.client.delete_collection(name=collection_name)
+            print(f"Colección '{collection_name}' eliminada.")
+        except Exception as exc:
+            print(f"No se pudo eliminar la colección '{collection_name}': {exc}")
+        
+        # Crear una nueva colección vacía
+        self.client.get_or_create_collection(name=collection_name)
+        print(f"Colección '{collection_name}' creada nuevamente.")
 
     def add_embeddings(
         self,
