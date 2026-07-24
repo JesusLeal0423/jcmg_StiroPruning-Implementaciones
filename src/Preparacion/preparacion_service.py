@@ -17,24 +17,48 @@ archivo_log = os.path.join(
     "preparaciones.log"
 )
 
+from pathlib import Path
+
+UPLOAD_DIR = Path("data/uploads")
+
+def obtener_ultimo_csv():
+
+    archivos = list(UPLOAD_DIR.glob("*.csv"))
+
+    if not archivos:
+        raise Exception("No hay archivos CSV cargados.")
+
+    return max(
+        archivos,
+        key=lambda x: x.stat().st_mtime
+    )
+
 def iniciar_preparacion(modelo= None, saveCSV=None):
 
     print("Cargando configuración STORI...")
 
     config = load_config()
 
-    stori_df = generar_stori(config)
+    csv_subido = obtener_ultimo_csv()
+
+    stori_df = generar_stori(
+        config,
+        csv_path=str(csv_subido)
+    )
 
     if len(stori_df) == 0:
         raise Exception("No se generaron registros STORI")
 
     # Exportar dataset preparado
+    
+    nombre_stori = f"{csv_subido.stem}_stori.csv"
+    
     csv_path = os.path.join(
         ruta_actual,
         "..",
         "..",
         "data",
-        "sample.csv"
+        nombre_stori
     )
 
     csv_path = os.path.abspath(csv_path)
@@ -112,7 +136,8 @@ def iniciar_preparacion(modelo= None, saveCSV=None):
             resultado_preparacion={
                 "idPreparacion": id_preparacion
             },
-            saveCSV=saveCSV
+            saveCSV=saveCSV,
+            dataset_name=csv_subido.stem
         )
         
         print("Antes de ejecutar optimización de clustering...")

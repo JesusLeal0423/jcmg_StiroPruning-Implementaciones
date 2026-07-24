@@ -30,7 +30,7 @@ def validar_columnas(df, columnas):
         raise ValueError(f"Faltan columnas en el CSV: {faltantes}")
 
 
-def generar_stori(config):
+def generar_stori(config, csv_path=None):
     print(" Leyendo CSV...")
     import os
 
@@ -41,10 +41,15 @@ def generar_stori(config):
 ####################################################
     base_dir = os.path.dirname(__file__)
 
-    csv_path = os.path.abspath(
-        os.path.join(base_dir, config["csv_path"])
-    )
-
+    if csv_path is None:
+        csv_path = os.path.abspath(
+            os.path.join(base_dir, config["csv_path"])
+        )
+    
+    print("Ruta actual:", os.getcwd())
+    print("CSV utilizado:", csv_path)
+    print("Archivo existe:", os.path.exists(csv_path))
+    
     df = pd.read_csv(csv_path)
 ####################################################
     print(df.columns.tolist())

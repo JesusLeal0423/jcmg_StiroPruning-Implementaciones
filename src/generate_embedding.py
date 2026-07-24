@@ -32,7 +32,8 @@ def generar_embeddings(
     input_data="data/sample.csv",
     output_dir="test",
     resultado_preparacion=None,
-    saveCSV=None
+    saveCSV=None,
+    dataset_name=None
 ):
     print(f"saveCSV generar_embeddings: {saveCSV}")
     # Cargar el dataset de intents
@@ -118,7 +119,10 @@ def generar_embeddings(
     print("\nGuardando embeddings en ChromaDB...") 
 
     # Para definir el nombre del dominio dependiendo del dataset q se este cargando
-    domain = os.path.splitext(os.path.basename(input_data))[0].lower()
+    if dataset_name:
+        domain = dataset_name.lower()
+    else:
+        domain = os.path.splitext(os.path.basename(input_data))[0].lower()
 
     # Crear la conexion con Chroma
     chroma = ChromaService(collection_prefix="stori")

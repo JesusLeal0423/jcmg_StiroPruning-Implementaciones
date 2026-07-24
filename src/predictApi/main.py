@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, UploadFile, File, APIRouter
 from pydantic import BaseModel, Field
 import numpy as np
 import pandas as pd
@@ -11,6 +11,8 @@ import datetime
 from src.Preparacion.preparacion_service import iniciar_preparacion
 import uuid
 import traceback
+from pathlib import Path
+import shutil
 
 app = FastAPI()
 classifier_manager = ClassificationManager(random_state=42)
@@ -49,6 +51,40 @@ def get_model_key(request: TrainRequest):
     """Genera una clave única para identificar un modelo"""
     adjusted_suffix = "_adjusted" if request.use_adjusted else ""
     return f"{request.modelo}_{request.params}{adjusted_suffix}"
+
+#Endpoint para subir csv
+
+router = APIRouter()
+
+UPLOAD_DIR = Path("data/uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+@app.post("/api/v1/upload-csv")
+async def upload_csv(file: UploadFile = File(...)):
+
+    # Verificar que se haya enviado un archivo
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No se recibió ningún archivo.")
+
+    # Verificar extensión
+    if not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Solo se aceptan archivos CSV.")
+
+    ruta = UPLOAD_DIR / file.filename
+
+    try:
+        with open(ruta, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        return {
+            "success": True,
+            "mensaje": "Archivo guardado correctamente.",
+            "archivo": file.filename,
+            "ruta": str(ruta)
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/listClassifiers")
 def list_classifiers():
@@ -223,6 +259,13 @@ info_chroma = ChromaInfoService()
 @app.get("/api/v1/chroma/colecciones")
 def obtener_colecciones(limit: int = 5):
     return info_chroma.listar_colecciones(limit)
+
+#====================================================
+#Poder eliminar colecciones
+
+@app.delete("/api/v1/chroma/colecciones/{nombre}")
+def eliminar_coleccion(nombre: str):
+    return info_chroma.eliminar_coleccion(nombre)
 
 #====================================================
 
