@@ -106,7 +106,7 @@ if __name__ == "__main__":
             "params": params,
             "embeddings_path": "test/Embeddings",
             "models_dir": "test/Modelos",
-            "ds_originales_path": "../data/sample.csv",
+            #"ds_originales_path": "../data/sample.csv",
             "use_adjusted": True
         }
         

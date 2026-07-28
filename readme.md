@@ -1,6 +1,6 @@
 # Proyecto de Embeddings y Clustering
 
-Este proyecto implementa un sistema de generación de embeddings y clustering usando UMAP + HDBSCAN con diferentes modelos de embeddings (Universal Sentence Encoder y Sentence Transformers).
+Este proyecto implementa un sistema de preparación, vectorización y búsqueda semántica basado en STORI, UMAP, HDBSCAN y modelos de embeddings. El sistema permite cargar cualquier conjunto de datos en formato CSV, construir dinámicamente una matriz STORI mediante el mapeo de columnas definido por el usuario, generar embeddings, almacenarlos en ChromaDB y realizar búsquedas semánticas sobre los datos preparados.
 
 ## 📋 Requisitos del Sistema
 
@@ -130,7 +130,31 @@ docker compose up --build
 
 Una vez desplegado el sistema, el flujo recomendado seria:
 
-### 1. Preparación
+### 1. Carga del DataSet
+
+Ejecutar el endpoint:
+```
+POST /api/v1/upload-csv
+```
+Este endpoint permite cargar cualquier archivo CSV (solamente archivos .csv) que será utilizado durante el proceso de preparación.
+
+El archivo es almacenado automáticamente en la carpeta:
+```
+data/uploads/
+```
+
+### 2. Consultar Columnas
+
+Una vez cargado el archivo, ejecutar:
+
+```
+GET /api/v1/csv/columnas
+```
+Este endpoint devuelve las columnas detectadas en el último CSV cargado.
+
+Esto nos ayuda para poder tener una nocion sobre que columnas que tenemos en el DataSet para poder contruir la matriz STORI.
+
+### 3. Preparación
 
 Ejecutar el endpoint:
 ```
@@ -138,14 +162,46 @@ POST /api/v1/preparacion/iniciar
 ```
 Este proceso realiza automáticamente:
 
-* Generación STORI.
+* Construcción de la matriz STORI.
 * Perfilado del dataset.
 * Validación de columnas.
 * Generación de embeddings.
 * Almacenamiento de embeddings en ChromaDB.
+* Optimización mediante Grid Search.
+
+Durante esta etapa el usuario define cómo construir la matriz STORI indicando qué columnas del CSV corresponden a cada componente.
 
 
-### 2. Carga o Entrenamiento del clasificador
+#### Ejemplo
+
+```
+{
+  "modelo": "st1",
+  "saveCSV_Local": true,
+
+  "spatialVariables": [
+    "PAIS",
+    "ESTADO",
+    "CIUDAD"
+  ],
+
+  "temporalVariable": "ANIO",
+
+  "interestVariables": [
+    "SEXO",
+    "RANGO_EDAD",
+    "ENFERMEDAD"
+  ],
+
+  "observableVariable": "CASOS",
+
+  "referenceVariable": "FUENTE"
+}
+```
+
+
+
+### 4. Carga o Entrenamiento del clasificador
 
 Una vez generado el clustering, ejecutar el endpoint:
 ```
@@ -160,7 +216,6 @@ Si el clasificador solicitado no existe, el sistema lo entrenará automáticamen
   "modelo": "st1",  // Modelo a elegir 
   "params": "separate_grid",
   "models_dir": "test/Modelos",
-  "ds_originales_path": "./data/sample.csv",
   "name_modelo": "mlp",
   "use_adjusted": false,
   "embeddings_path": "test/Embeddings"
@@ -173,7 +228,9 @@ Si el clasificador solicitado no existe, el sistema lo entrenará automáticamen
 * `st2`: all-MiniLM-L6-v2
 * `st3`: paraphrase-mpnet-base-v2
 
-## 3. Predicción
+Nota: Tendria que ser el mismo modelo con el cual se genero la preparacion;
+
+## 5. Predicción
 
 Finalmente ejecutar:
 ```
@@ -201,7 +258,7 @@ Este endpoint:
     "0.0668115769278366", 
     "100k"
   ],
-  "domain": "sample",
+  "domain": "H_Rates_Short", // Aqui se pone el nombre de la coleccion  a la cual se va a pedir la consulta, en otros terminos seria el nombre del dataset para mas practicidad
   "n_results": 10   // Numero de resultados similares a retornar
 }
 
@@ -212,6 +269,7 @@ Este endpoint:
 * `st2`: all-MiniLM-L6-v2
 * `st3`: paraphrase-mpnet-base-v2
 
+Nota: Tendria que ser el mismo modelo con el cual se genero la preparacion y con el que se guardo en el clasificador
 
 ## 📒 Endpoints Extra
 
@@ -230,6 +288,10 @@ Pide ingresar como parametros el id de la consulta que se vaya querer obtener in
 ### 2. /listClassifiers
 
 Permite consultar con cuantos modelos contamos ya disponibles
+
+### 3. GET /api/v1/chroma/colecciones
+
+Devuelve todas las colecciones almacenadas en ChromaDB, para poder conocer los datasets disponibles para realizar predicciones.
 
 ## 🗃️ Persistencia
 

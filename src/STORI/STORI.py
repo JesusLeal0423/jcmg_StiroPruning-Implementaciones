@@ -78,7 +78,10 @@ def generar_stori(config, csv_path=None):
     df["observation"] = df[observable_col]
 
     # Reference (placeholder)
-    df["reference"] = df["TASA_TYPE"]
+    reference_col = config["referenceVariable"]
+    df["reference"] = df[reference_col]
+    #df["reference"] = df["TASA_TYPE"]
+    
 
     # Seleccionar columnas finales
     stori_df = df[["spatial", "temporal", "interest", "observation", "reference"]]

@@ -13,16 +13,18 @@ import uuid
 import traceback
 from pathlib import Path
 import shutil
+from typing import List
+
+
 
 app = FastAPI()
 classifier_manager = ClassificationManager(random_state=42)
-dataset_originales_path = "./data/sample.csv"
+#dataset_originales_path = "./data/sample.csv"
     
 class TrainRequest(BaseModel):
     modelo: str = "st1"
     params: str = "separate_grid"
     models_dir: str = "test/Modelos"
-    ds_originales_path: str = "./data/sample.csv"
     name_modelo: str = "mlp"
     use_adjusted: bool = False
     embeddings_path: str = "test/Embeddings"
@@ -95,7 +97,7 @@ def list_classifiers():
             # Crear una copia de los datos sin el classifier_model
             classifier_info = {
             "modelo_name": classifier_data.get("modelo_name"),
-            "originales_path": classifier_data.get("originales_path"),
+            #"originales_path": classifier_data.get("originales_path"),
             "use_adjusted": classifier_data.get("use_adjusted"),
             "classifier_type": classifier_data.get("classifier_type"),
             "embeddings_path": classifier_data.get("embeddings_path")
@@ -118,12 +120,11 @@ def load_classifier(request: TrainRequest):
         #     "modelo": "st1",
         #     "params": "separate_grid",
         #     "models_dir": "test/Modelos",
-        #     "ds_originales_path": "./data/sample.csv",
         #     "name_modelo": "mlp",
         #     "use_adjusted": false,
         #     "embeddings_path": "test/Embeddings"
         # }
-        dataset_originales_path = request.ds_originales_path
+        #dataset_originales_path = request.ds_originales_path
         # Aquí iría la lógica para entrenar el clasificador
         # Cargar datos de clustering para entrenar el clasificador
         print("Iniciando carga del clasificador...")
@@ -155,7 +156,7 @@ def load_classifier(request: TrainRequest):
                 "params": request.params,
                 "embeddings_path": request.embeddings_path,
                 "models_dir": request.models_dir,
-                "ds_originales_path": request.ds_originales_path,
+               # "ds_originales_path": request.ds_originales_path,
                 "use_adjusted": request.use_adjusted
             })
 
@@ -168,7 +169,7 @@ def load_classifier(request: TrainRequest):
         
         classifier_add = {
             "modelo_name": request.modelo,
-            "originales_path": dataset_originales_path,
+            #"originales_path": dataset_originales_path,
             "use_adjusted": model_suffix,
             "classifier_model": model_loaded,
             "classifier_type": model_name,
@@ -352,7 +353,7 @@ def predict(request: PredictRequest):
         else:
             classifier_model = loaded_classifiers[model_key]
             print(f"Clasificador encontrado en el registro: {model_key}")
-        dataset_originales_path = classifier_model["originales_path"]
+        #dataset_originales_path = classifier_model["originales_path"]
         predictions, probabilities = classifier_manager.predict_query(
             model=classifier_model["classifier_model"],
             new_embeddings=embedding.reshape(1, -1)
@@ -641,8 +642,53 @@ def listar_predicciones():
 
     return prediction_status
 
+
 ################################################
+
+#Endpoint para poder ver la columnas del csv subido, para mas facilidad en la etapa de preparacion
+
+UPLOAD_DIR = Path("data/uploads")
+
+def obtener_ultimo_csv():
+
+    archivos = list(UPLOAD_DIR.glob("*.csv"))
+
+    if not archivos:
+        raise HTTPException(
+            status_code=404,
+            detail="No hay archivos CSV cargados."
+        )
+
+    return max(
+        archivos,
+        key=lambda x: x.stat().st_mtime
+    )
+
+
+@app.get("/api/v1/csv/columnas")
+def obtener_columnas():
+
+    csv = obtener_ultimo_csv()
+
+    df = pd.read_csv(csv, nrows=0)
+
+    return {
+        "archivo": csv.name,
+        "columnas": df.columns.tolist()
+    }
+
+################################################
+
 #Endpoint para iniciar la preparación de datos
+
+'''
+class saveCSVEmbeddings(BaseModel):
+
+    modelo: str
+
+    saveCSV_Local: bool
+
+'''
 
 
 class saveCSVEmbeddings(BaseModel):
@@ -654,21 +700,39 @@ class saveCSVEmbeddings(BaseModel):
         saveCSV_Local: bool = Field(
         default=False,
         description="Indica si se deben guardar los embeddings generados en un CSV."
-    )
+        )
 
+        spatialVariables: List[str]
+
+        temporalVariable: str
+
+        interestVariables: List[str]
+
+        observableVariable: str
+
+        referenceVariable: str
+    
 @app.post("/api/v1/preparacion/iniciar")
 def preparar_datos(Body: saveCSVEmbeddings):
     try:
-        resultado = iniciar_preparacion(  modelo=Body.modelo, saveCSV=Body.saveCSV_Local)
+        resultado = iniciar_preparacion(
+            modelo=Body.modelo,
+            saveCSV=Body.saveCSV_Local,
+            spatialVariables=Body.spatialVariables,
+            temporalVariable=Body.temporalVariable,
+            interestVariables=Body.interestVariables,
+            observableVariable=Body.observableVariable,
+            referenceVariable=Body.referenceVariable
+        )
             
         return  {
             "resultado": resultado,
             "modelo": Body.modelo,
-            "saveCSV": Body.saveCSV_Local
+            "saveCSV": Body.saveCSV_Local,
         }
 
     except Exception as e:
-        raise HTTPException(
+        raise HTTPException( 
             status_code=500,
             detail=str(e)
         )

@@ -33,11 +33,39 @@ def obtener_ultimo_csv():
         key=lambda x: x.stat().st_mtime
     )
 
-def iniciar_preparacion(modelo= None, saveCSV=None):
+def iniciar_preparacion(
+    modelo= None, 
+    saveCSV=None, 
+    
+    spatialVariables = None, 
+    interestVariables = None, 
+    temporalVariable = None, 
+    observableVariable = None, 
+    referenceVariable = None
+    
+    ):
 
     print("Cargando configuración STORI...")
 
     config = load_config()
+    
+    config["spatialVariables"] = {
+    str(i): col
+        for i, col in enumerate(spatialVariables)
+    }
+
+    config["interestVariables"] = {
+        str(i): col
+        for i, col in enumerate(interestVariables)
+    }
+
+    config["temporalVariables"]["Date"] = temporalVariable
+
+    config["observableVariables"] = {
+        "observable": observableVariable
+    }
+
+    config["referenceVariable"] = referenceVariable
 
     csv_subido = obtener_ultimo_csv()
 
